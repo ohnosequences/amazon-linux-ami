@@ -1,0 +1,13 @@
+{
+    "name": "ami-44939930",
+    "bundle_version": "0.1.0-SNAPSHOT",
+    "tool_version": "2013.03",
+    "description": "Amazon Linux AMI, EBS-Backed 64-bit, EU Ireland",
+    "org": "ohnosequences",
+    "scala_version": "2.10.0",
+    "publish_private": false,
+    "dependencies": [{
+    	"name": "ami-bundle",
+    	"bundle_version": "0.1.0-SNAPSHOT"
+	}]
+}
