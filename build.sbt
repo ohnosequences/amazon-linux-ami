@@ -34,7 +34,7 @@ libraryDependencies ++= Seq (
                             , "ohnosequences" %% "statika" % "0.7.0"
                             )
 
-libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.1.0-SNAPSHOT") 
+libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.1.1-SNAPSHOT") 
 
 scalacOptions ++= Seq("-feature"
                     , "-language:higherKinds"
