@@ -9,7 +9,7 @@ organization := "ohnosequences"
 
 scalaVersion := "2.10.0"
 
-publishMavenStyle := true
+publishMavenStyle := false
 
 publishPrivate := false
 
