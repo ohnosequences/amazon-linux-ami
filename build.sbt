@@ -34,7 +34,7 @@ libraryDependencies ++= Seq (
                             , "ohnosequences" % "aws-scala-tools_2.10" % "0.2.3" % "test"
                             )
 
-libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.1.1-SNAPSHOT") 
+libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.1.1") 
 
 scalacOptions ++= Seq("-feature"
                     , "-language:higherKinds"
