@@ -32,10 +32,11 @@ cd /root
 
 echo
 echo " -- Creating empty s3cmd config, it will use IAM role -- "
-echo [default] > /root/.s3cfg
+echo "[default]" > /root/.s3cfg
+cat /root/.s3cfg
 echo " -- Getting credentials -- "
 echo
-s3cmd get s3://private.snapshots.statika.ohnosequences.com/credentials/AwsCredentials.properties
+s3cmd --config /root/.s3cfg get s3://private.snapshots.statika.ohnosequences.com/credentials/AwsCredentials.properties
 
 echo
 echo " -- sbt -- "
