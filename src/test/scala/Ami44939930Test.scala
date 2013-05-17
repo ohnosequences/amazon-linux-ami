@@ -10,6 +10,7 @@ class ExampleSuite extends FunSuite {
   object Ami44939930Tester extends Bundle(
       name = Ami44939930_2013_03.name
     , version = Ami44939930_2013_03.version
+    , artifact = Ami44939930_2013_03.artifact
     , dependencies = Ami44939930_2013_03 :: HNil)
 
   val ec2 = EC2.create(new java.io.File("AwsCredentials.properties"))
@@ -20,7 +21,7 @@ class ExampleSuite extends FunSuite {
       , amiId = Ami44939930_2013_03.id
       , keyName = "statika-launcher"
       , deviceMapping = Map()
-      , userData = Ami44939930_2013_03.userScript(Ami44939930Tester, "ami-44939930.2013.03")
+      , userData = Ami44939930_2013_03.userScript(Ami44939930Tester)
       , instanceProfileARN = Some("arn:aws:iam::857948138625:instance-profile/statika-tester")
       )
     ec2.runInstances(1, specs)
