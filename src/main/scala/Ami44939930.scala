@@ -9,10 +9,10 @@ import ohnosequences.statika.AmiBundle
 object Ami44939930_2013_03 extends AmiBundle(
     id = "ami-44939930",
     amiVersion = "2013.03",
-    version = "0.1.0"
+    version = "0.2.0-SNAPSHOT"
   ) {
 
-  def userScript[B <: BundleAux](b: B, artifact: String)
+  def userScript[B <: BundleAux](b: B)
       (implicit s: Selector[b.Deps, this.type]): String =
 s"""#!/bin/sh
 
@@ -60,7 +60,7 @@ chmod a+x /bin/g8
 echo
 echo " -- running g8 -- "
 echo
-g8 ohnosequences/statika-bundle.g8 -b feature/bundle-tester '--name=BundleTester' '--ami=Ami44939930_2013_03' '--class_name=${b.name}' '--bundle_version=${b.version}' '--artifact_name=${artifact}' '--credentials=/root/AwsCredentials.properties'
+g8 ohnosequences/statika-bundle.g8 -b feature/bundle-tester '--name=BundleTester' '--ami=Ami44939930_2013_03' '--class_name=${b.name}' '--bundle_version=${b.version}' '--artifact_name=${b.artifact}' '--credentials=/root/AwsCredentials.properties'
 cd bundletester
 
 echo

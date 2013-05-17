@@ -29,12 +29,12 @@ resolvers ++= s3resolvers
 
 libraryDependencies ++= Seq (
                               "com.chuusai" %% "shapeless" % "1.2.3"
-                            , "ohnosequences" %% "statika" % "0.7.1"
+                            , "ohnosequences" %% "statika" % "0.8.1"
+                            , "ohnosequences" %% "aws-scala-tools" % "0.2.3" % "test"
                             , "org.scalatest" %% "scalatest" % "1.9.1" % "test"
-                            , "ohnosequences" % "aws-scala-tools_2.10" % "0.2.3" % "test"
                             )
 
-libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.1.1") 
+libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.2.0") 
 
 scalacOptions ++= Seq("-feature"
                     , "-language:higherKinds"
