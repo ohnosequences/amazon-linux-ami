@@ -11,11 +11,11 @@ scalaVersion := "2.10.0"
 
 publishMavenStyle := false
 
+s3credentialsFile := Some("AwsCredentials.properties")
+
 publishPrivate := false
 
-publishTo <<= (version, publishPrivate) { (v: String, p: Boolean) =>
-  Some(s3resolver(isSnapshot = v.trim.endsWith("SNAPSHOT"), isPrivate = p, publisher = true))
-}
+publishTo <<= (s3credentials, version, publishPrivate)(s3publisher) 
 
 resolvers ++= Seq (
                     "Typesafe Releases"   at "http://repo.typesafe.com/typesafe/releases"
@@ -23,9 +23,15 @@ resolvers ++= Seq (
                   , "Sonatype Snapshots"  at "https://oss.sonatype.org/content/repositories/snapshots"
                   , "Era7 Releases"       at "http://releases.era7.com.s3.amazonaws.com"
                   , "Era7 Snapshots"      at "http://snapshots.era7.com.s3.amazonaws.com"
+                  , PublicBundleSnapshots
+                  , PublicBundleReleases
                   )
 
-resolvers ++= s3resolvers
+resolvers <++= s3credentials {
+  case None     => Seq()
+  case Some(cs) => Seq( PrivateBundleSnapshots(cs)
+                      , PrivateBundleReleases(cs) )
+}
 
 libraryDependencies ++= Seq (
                               "com.chuusai" %% "shapeless" % "1.2.3"
