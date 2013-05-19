@@ -15,7 +15,7 @@ s3credentialsFile := Some("AwsCredentials.properties")
 
 publishPrivate := false
 
-publishTo <<= (s3credentials, version, publishPrivate)(s3publisher) 
+publishTo <<= (s3credentials, version, publishPrivate)(s3publisher(statikaPrefix)) 
 
 resolvers ++= Seq (
                     "Typesafe Releases"   at "http://repo.typesafe.com/typesafe/releases"
@@ -27,11 +27,7 @@ resolvers ++= Seq (
                   , PublicBundleReleases
                   )
 
-resolvers <++= s3credentials {
-  case None     => Seq()
-  case Some(cs) => Seq( PrivateBundleSnapshots(cs)
-                      , PrivateBundleReleases(cs) )
-}
+resolvers <++= s3credentials(PrivateBundleResolvers(statikaPrefix))
 
 libraryDependencies ++= Seq (
                               "com.chuusai" %% "shapeless" % "1.2.3"

@@ -9,7 +9,7 @@ import ohnosequences.statika.AmiBundle
 object Ami44939930_2013_03 extends AmiBundle(
     id = "ami-44939930",
     amiVersion = "2013.03",
-    version = "0.3.0"
+    version = "0.3.1"
   ) {
 
   def userScript[B <: BundleAux](b: B)
