@@ -9,7 +9,7 @@ import ohnosequences.statika.AmiBundle
 object Ami44939930_2013_03 extends AmiBundle(
     id = "ami-44939930",
     amiVersion = "2013.03",
-    version = "0.3.1"
+    version = "0.3.2"
   ) {
 
   def userScript[B <: BundleAux](b: B)
@@ -20,6 +20,7 @@ s"""#!/bin/sh
 exec &> /root/log.txt
 
 cd /root
+export HOME="/root"
 
 echo
 echo " -- s3cmd -- "
@@ -66,7 +67,8 @@ cd bundletester
 echo
 echo " -- sbt run -- "
 echo
-sbt run
+sbt start-script
+target/start
 """
 }
 

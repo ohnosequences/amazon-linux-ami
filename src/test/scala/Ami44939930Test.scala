@@ -5,7 +5,7 @@ import shapeless._
 import ohnosequences.statika.General._
 import ohnosequences.awstools.ec2._
 
-class ExampleSuite extends FunSuite {
+class Ami44939930Test extends FunSuite {
 
   object Ami44939930Tester extends Bundle(
       name = Ami44939930_2013_03.name
