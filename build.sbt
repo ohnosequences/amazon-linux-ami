@@ -1,9 +1,12 @@
 
 import sbtrelease._
 import ReleaseStateTransformations._
-import Ami44939930Build._
+import ReleasePlugin._
+import ReleaseKeys._
 
 name := "ami-44939930.2013.03"
+
+description := "Bundle checking that instance is run with ami-44939930 Amazon Machine Image"
 
 organization := "ohnosequences"
 
@@ -32,7 +35,7 @@ resolvers <++= s3credentials(PrivateBundleResolvers(statikaPrefix))
 libraryDependencies ++= Seq (
                               "com.chuusai" %% "shapeless" % "1.2.3"
                             , "ohnosequences" %% "statika" % "0.8.1"
-                            , "ohnosequences" %% "aws-scala-tools" % "0.2.3" % "test"
+                            , "ohnosequences" % "gener8bundle_2.10.0" % "0.9.0" % "test"
                             , "org.scalatest" %% "scalatest" % "1.9.1" % "test"
                             )
 
@@ -44,3 +47,32 @@ scalacOptions ++= Seq("-feature"
                     , "-deprecation"
                     , "-unchecked"
                     )
+
+// sbt-release settings
+
+releaseSettings
+
+releaseProcess <<= thisProjectRef apply { ref =>
+  Seq[ReleaseStep](
+    checkSnapshotDependencies
+  , inquireVersions
+  , runTest
+  , setReleaseVersion
+  , commitReleaseVersion
+  , tagRelease
+  , publishArtifacts
+  , setNextVersion
+  , commitNextVersion
+  , pushChanges
+  )
+}
+
+// sbt-buildinfo settings
+
+buildInfoSettings
+
+sourceGenerators in Compile <+= buildInfo
+
+buildInfoKeys := Seq[BuildInfoKey](name, version)
+
+buildInfoPackage := "ohnosequences.statika.Ami44939930_2013_03"
