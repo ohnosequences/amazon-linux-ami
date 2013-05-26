@@ -4,13 +4,10 @@ package ohnosequences.statika.Ami44939930_2013_03
 
 import shapeless._
 import ohnosequences.statika.General._
-import ohnosequences.statika.AmiBundle
+import ohnosequences.statika.Ami._
+import buildinfo.MetaData._
 
-object Ami44939930_2013_03 extends AmiBundle(
-    id = "ami-44939930",
-    amiVersion = "2013.03",
-    version = BuildInfo.version
-  ) {
+object Ami44939930_2013_03 extends AmiBundle("ami-44939930", "2013.03") {
 
   def userScript[B <: BundleAux](b: B)
       (implicit s: Selector[b.Deps, this.type]): String =
@@ -74,7 +71,7 @@ cs n8han/giter8
 echo
 echo " -- Running g8 -- "
 echo
-g8 ohnosequences/statika-bundle.g8 -b feature/bundle-tester '--name=BundleTester' '--ami=Ami44939930_2013_03' '--class_name=${b.name}' '--bundle_version=${b.version}' '--artifact_name=${b.artifact}' '--credentials=/root/AwsCredentials.properties'
+g8 ohnosequences/statika-bundle.g8 -b feature/bundle-tester '--name=BundleTester' '--ami=Ami44939930_2013_03' '--class_name=${b.name}' '--bundle_version=${b.metadata.version}' '--artifact_name=${b.metadata.artifact}' '--credentials=/root/AwsCredentials.properties'
 cd bundletester
 
 echo
