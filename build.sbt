@@ -6,4 +6,9 @@ organization := "ohnosequences"
 
 isPrivate := false
 
-libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.4.0") 
+libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.5.0") 
+
+
+bundlePackage := "ohnosequences.statika.Ami44939930_2013_03"
+
+bundleObject := "Ami44939930_2013_03"

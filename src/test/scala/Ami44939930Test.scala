@@ -3,22 +3,34 @@ package ohnosequences.statika.Ami44939930_2013_03
 import org.scalatest.FunSuite
 import shapeless._
 import ohnosequences.statika.General._
+import ohnosequences.statika.MetaData._
 import ohnosequences.statika.Ami._
-import ohnosequences.statika.gener8bundle.TestOnInstance
-import buildinfo.MetaData._
+import ohnosequences.statika.gener8bundle._
 
 class Ami44939930Test extends FunSuite {
 
-  object tester extends Bundle(Ami44939930_2013_03 :: HNil) {
-    override val name = Ami44939930_2013_03.name
+  import MetaData._
+
+  val ami = Ami44939930_2013_03
+
+  // bundle, which pretends to be Ami44939930_2013_03, 
+  //  because it needs to be self-dependent
+  object Tester extends Bundle(ami :: HNil) {
+    override val name = ami.name
+
+    implicit object TesterMD extends MetaDataOf[Tester.type] {
+      val artifact = ami.metadata.artifact
+      val version = ami.metadata.version
+      val s3CredentialsFile = ami.metadata.s3CredentialsFile
+    }
   }
 
-  test("launching an EC2 instance with " + tester + " bundle"){
+  test(s"launching an EC2 instance with $Tester.name (Tester.metadata) bundle"){
 
-    tester.metadata.s3CredentialsFile map { creds =>
+    Tester.metadata.s3CredentialsFile map { creds =>
 
-      val userscript = tester.ami.userScript(tester)
-      TestOnInstance.test(creds, tester.ami.id, userscript)
+      val userscript = Tester.ami.userScript(Tester)
+      TestOnInstance.test(creds, Tester.ami.id, userscript)
 
     }
 
