@@ -73,7 +73,7 @@ cs n8han/giter8
 echo
 echo " -- Running g8 -- "
 echo
-g8 ohnosequences/statika-bundle.g8 -b feature/bundle-tester '--name=BundleTester' '--ami=Ami44939930_2013_03' '--class_name=${b.name}' '--bundle_version=${md.version}' '--artifact_name=${md.artifact}' '--statika_version=0.11.0-SNAPSHOT' '--credentials=/root/AwsCredentials.properties'
+g8 ohnosequences/statika-bundle.g8 -b feature/bundle-tester '--name=BundleTester' '--ami=Ami44939930_2013_03' '--class_name=${b.name}' '--bundle_version=${md.version}' '--artifact_name=${md.artifact}' '--credentials=/root/AwsCredentials.properties'
 cd bundletester
 
 echo
