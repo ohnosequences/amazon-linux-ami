@@ -9,3 +9,7 @@ isPrivate := false
 bundlePackage := "ohnosequences.statika.ami"
 
 bundleObject := "AmazonLinuxAMIBundle"
+
+libraryDependencies ++= Seq(
+  "ohnosequences" % "statika-cli_2.10.2" % "0.13.0" % "test"
+  )

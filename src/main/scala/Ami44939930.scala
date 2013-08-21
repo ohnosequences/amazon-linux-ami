@@ -70,6 +70,9 @@ curl http://scalasbt.artifactoryonline.com/scalasbt/sbt-native-packages/org/scal
 yum install sbt.rpm -y 
 """
 
+  def moduleID(m: MetaData): String = 
+    "\"%s\" %%%% \"%s\" %% \"%s\"" format (m.organization, m.artifact, m.version)
+
   val building = """
 echo
 echo " -- Building Applicator -- "
@@ -88,7 +91,7 @@ sbt 'set name := "applicator"' \
   'set s3credentialsFile in Global := Some("/root/AwsCredentials.properties")' \
   'set resolvers ++= %s' \
   'set resolvers <++= s3credentials { cs => (%s map { r: S3Resolver => { cs map r.toSbtResolver } }).flatten }' \
-  'set libraryDependencies ++= Seq ("ohnosequences" %%%% "statika" %% "%s", %s, %s)' \
+  'set libraryDependencies ++= Seq ("ohnosequences" %%%% "statika" %% "%s", %s %s)' \
   'set sourceGenerators in Compile <+= sourceManaged in Compile map { dir => val file = dir / "apply.scala"; IO.write(file, "%s"); Seq(file) }' \
   'session save' \
   'add-start-script-tasks' \
@@ -97,8 +100,8 @@ sbt 'set name := "applicator"' \
     md.resolvers
   , md.privateResolvers
   , md.statikaVersion
-  , """"%s" %%%% "%s" %% "%s" """ format (md.organization, md.artifact, md.version)
-  , """"%s" %%%% "%s" %% "%s" """ format (mb.organization, mb.artifact, mb.version)
+  , moduleID(md)
+  , if (moduleID(md) == moduleID(mb)) "" else ", "+moduleID(mb)
   , """object apply extends App {%s.installWithDeps(%s) map println}""" format (md.name, mb.name)
   )
 
