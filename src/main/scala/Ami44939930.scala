@@ -1,19 +1,24 @@
-package ohnosequences.statika.Ami44939930_2013_03
+package ohnosequences.statika.ami
 
-// Amazon Linux AMI, EBS-Backed 64-bit, EU Ireland
+// Abstract library and a statika bundle for ami-44939930
 
-import shapeless._
-import ohnosequences.statika.General._
-import ohnosequences.statika.MetaData._
-import ohnosequences.statika.Ami._
+import ohnosequences.statika._
 
-object Ami44939930_2013_03 extends AmiBundle("ami-44939930", "2013.03") {
+case object AMI44939930 extends AbstractAMI("ami-44939930", "2013.03"){
 
-  import MetaData._
+  def userScript[
+      D <: DistributionAux
+    , B <: BundleAux : distribution.IsMember
+    ](distribution: D
+    , bundle: B
+    , credentials: Either[(String, String), String]
+    ): String = {
 
-  def userScript[ B <: BundleAux : DependsOn[this.type]#λ ]( b: B )
-    (implicit md: MetaDataOf[b.type]): String = {
-s"""#!/bin/sh
+      val mb = bundle.metadata
+      val md = distribution.metadata
+
+  val initSetting =
+"""#!/bin/sh
 
 # redirecting output for logging
 exec &> /root/log.txt
@@ -23,9 +28,16 @@ echo " -- Setting environment -- "
 echo
 cd /root
 export HOME="/root"
-export PATH="/root/bin:$$PATH"
+export PATH="/root/bin:$PATH"
 env
+"""
 
+  val credentialsSet = credentials match {
+      case Left((usr,psw)) => """
+echo "accessKey = %s" >  /root/AwsCredentials.properties
+echo "secretKey = %s" >> /root/AwsCredentials.properties
+      """ format (usr, psw)
+      case Right(bucket) => """
 echo
 echo " -- Installing git -- "
 echo
@@ -47,46 +59,69 @@ cat /root/.s3cfg
 echo
 echo " -- Getting credentials -- "
 echo
-s3cmd --config /root/.s3cfg get s3://private.snapshots.statika.ohnosequences.com/credentials/AwsCredentials.properties
+s3cmd --config /root/.s3cfg get %s""" format bucket
+  }
 
+  val sbt = """
 echo
 echo " -- Installing sbt -- "
 echo
 curl http://scalasbt.artifactoryonline.com/scalasbt/sbt-native-packages/org/scala-sbt/sbt/0.12.3/sbt.rpm > sbt.rpm
 yum install sbt.rpm -y 
+"""
 
+  val building = """
 echo
-echo " -- Installing conscript -- "
+echo " -- Building Applicator -- "
 echo
-curl https://raw.github.com/n8han/conscript/master/setup.sh | sh
-# cp /root/bin/cs /bin/cs
-# chmod a+x /bin/cs
-# cs --setup
+mkdir applicator
+cd applicator
+sbt 'set name := "applicator"' \
+  'set scalaVersion := "2.10.2"' \
+  'session save' \
+  'reload plugins' \
+  'set resolvers += "Era7 releases" at "http://releases.era7.com.s3.amazonaws.com"' \
+  'set addSbtPlugin("ohnosequences" %% "sbt-s3-resolver" %% "0.5.0")' \
+  'set addSbtPlugin("com.typesafe.sbt" %% "sbt-start-script" %% "0.8.0")' \
+  'session save' \
+  'reload return' \
+  'set s3credentialsFile in Global := Some("/root/AwsCredentials.properties")' \
+  'set resolvers ++= %s' \
+  'set resolvers <++= s3credentials { cs => (%s map { r: S3Resolver => { cs map r.toSbtResolver } }).flatten }' \
+  'set libraryDependencies ++= Seq ("ohnosequences" %%%% "statika" %% "%s", %s, %s)' \
+  'set sourceGenerators in Compile <+= sourceManaged in Compile map { dir => val file = dir / "apply.scala"; IO.write(file, "%s"); Seq(file) }' \
+  'session save' \
+  'add-start-script-tasks' \
+  'start-script'
+""" format (
+    md.resolvers
+  , md.privateResolvers
+  , md.statikaVersion
+  , """"%s" %%%% "%s" %% "%s" """ format (md.organization, md.artifact, md.version)
+  , """"%s" %%%% "%s" %% "%s" """ format (mb.organization, mb.artifact, mb.version)
+  , """object apply extends App {%s.installWithDeps(%s) map println}""" format (md.name, mb.name)
+  )
 
+  val running = """
 echo
-echo " -- Installing giter8 -- "
-echo
-cs n8han/giter8
-# cp /root/bin/g8 /bin/g8
-# chmod a+x /bin/g8
-
-echo
-echo " -- Running g8 -- "
-echo
-g8 ohnosequences/statika-bundle.g8 -b feature/bundle-tester '--name=BundleTester' '--ami=Ami44939930_2013_03' '--class_name=${b.name}' '--bundle_version=${md.version}' '--artifact_name=${md.artifact}' '--credentials=/root/AwsCredentials.properties'
-cd bundletester
-
-echo
-echo " -- Building ${b.name} -- "
-echo
-sbt start-script
-
-echo
-echo " -- Running ${b.name} -- "
+echo " -- Running -- "
 echo
 target/start
 """
+
+    initSetting + credentialsSet + sbt +
+    building + running
   }
+
 }
 
-object Ami44939930App extends App { installWithDeps(Ami44939930_2013_03) }
+case object AmazonLinuxAMIBundle extends Bundle() {
+
+  val metadata = meta.AmazonLinuxAMIBundle
+
+  val ami = AMI44939930
+
+  override def install[D <: DistributionAux]
+        (distribution: D): InstallResults = ami.checkID
+
+}

@@ -1,14 +1,11 @@
-name := "ami-44939930.2013.03"
+name := "ami-44939930"
 
-description := "Bundle checking that instance is run with ami-44939930 Amazon Machine Image"
+description := "Abstract library and a statika bundle for ami-44939930"
 
 organization := "ohnosequences"
 
 isPrivate := false
 
-libraryDependencies ++= Seq("ohnosequences" %% "ami-bundle" % "0.5.1") 
+bundlePackage := "ohnosequences.statika.ami"
 
-
-bundleAmi := "Ami44939930_2013_03"
-
-bundleObject := "Ami44939930_2013_03"
+bundleObject := "AmazonLinuxAMIBundle"
