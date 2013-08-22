@@ -120,7 +120,7 @@ target/start
 
 case object AmazonLinuxAMIBundle extends Bundle() {
 
-  val metadata = meta.AmazonLinuxAMIBundle
+  val metadata = generated.metadata.AmazonLinuxAMIBundle
 
   val ami = AMI44939930
 
