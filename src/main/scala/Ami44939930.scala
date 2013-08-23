@@ -11,7 +11,7 @@ case object AMI44939930 extends AbstractAMI("ami-44939930", "2013.03"){
     , B <: BundleAux : distribution.IsMember
     ](distribution: D
     , bundle: B
-    , credentials: Either[(String, String), String]
+    , credentials: Credentials
     ): String = {
 
       val mb = bundle.metadata
@@ -33,11 +33,12 @@ env
 """
 
   val credentialsSet = credentials match {
-      case Left((usr,psw)) => """
-echo "accessKey = %s" >  /root/AwsCredentials.properties
-echo "secretKey = %s" >> /root/AwsCredentials.properties
-      """ format (usr, psw)
-      case Right(bucket) => """
+//       case NoCredentials => ""
+//       case Explicit(usr,psw) => """
+// echo "accessKey = %s" >  /root/AwsCredentials.properties
+// echo "secretKey = %s" >> /root/AwsCredentials.properties
+//       """ format (usr, psw)
+      case InBucket(bucket) => """
 echo
 echo " -- Installing git -- "
 echo
@@ -60,6 +61,7 @@ echo
 echo " -- Getting credentials -- "
 echo
 s3cmd --config /root/.s3cfg get %s""" format bucket
+      case _ => ""
   }
 
   val sbt = """
@@ -84,11 +86,12 @@ sbt 'set name := "applicator"' \
   'session save' \
   'reload plugins' \
   'set resolvers += "Era7 releases" at "http://releases.era7.com.s3.amazonaws.com"' \
-  'set addSbtPlugin("ohnosequences" %% "sbt-s3-resolver" %% "0.5.0")' \
+  'set resolvers += Resolver.url("Era7 Releases", url("http://releases.era7.com.s3.amazonaws.com"))(Resolver.ivyStylePatterns)' \
+  'set addSbtPlugin("ohnosequences" %% "sbt-s3-resolver" %% "0.5.2")' \
   'set addSbtPlugin("com.typesafe.sbt" %% "sbt-start-script" %% "0.8.0")' \
   'session save' \
   'reload return' \
-  'set s3credentialsFile in Global := Some("/root/AwsCredentials.properties")' \
+  '%s' \
   'set resolvers ++= %s' \
   'set resolvers <++= s3credentials { cs => (%s map { r: S3Resolver => { cs map r.toSbtResolver } }).flatten }' \
   'set libraryDependencies ++= Seq ("ohnosequences" %%%% "statika" %% "%s", %s %s)' \
@@ -97,7 +100,13 @@ sbt 'set name := "applicator"' \
   'add-start-script-tasks' \
   'start-script'
 """ format (
-    md.resolvers
+    credentials match {
+      // hope that ivy-s3-resolver will use instance role credentials
+      case NoCredentials =>     s"""set s3credentials in Global := Some(("", ""))"""
+      case Explicit(usr,psw) => s"""set s3credentials in Global := Some(("usr", "psw"))"""
+      case _ => """set s3credentialsFile in Global := Some("/root/AwsCredentials.properties")"""
+    }
+  , md.resolvers
   , md.privateResolvers
   , md.statikaVersion
   , moduleID(md)
@@ -124,7 +133,6 @@ case object AmazonLinuxAMIBundle extends Bundle() {
 
   val ami = AMI44939930
 
-  override def install[D <: DistributionAux]
-        (distribution: D): InstallResults = ami.checkID
+  def install[D <: DistributionAux](distribution: D): InstallResults = ami.checkID
 
 }

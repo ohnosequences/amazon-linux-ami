@@ -12,6 +12,5 @@ case object DummyDistribution extends Distribution(
 ) {
   val metadata = generated.metadata.DummyDistribution
 
-  val resourceBucket = ""
-  def getResourcePath[B <: BundleAux](bundle: B, relativePath: Path): Path = ""
+  def install[D <: DistributionAux](distribution: D): InstallResults = success(metadata.name+" is installed")
 }

@@ -11,8 +11,8 @@ class Ami44939930Test extends org.scalatest.FunSuite {
 
   test("Running instance with Git bundle test"){
 
-    val userscript = DummyDistribution.userScript(AmazonLinuxAMIBundle, 
-      Right("s3://private.snapshots.statika.ohnosequences.com/credentials/AwsCredentials.properties"))
+    val userscript = DummyDistribution.userScript(AmazonLinuxAMIBundle, NoCredentials)
+      // InBucket("s3://private.snapshots.statika.ohnosequences.com/credentials/AwsCredentials.properties"))
     println(userscript)
 
     // for running test you need to have this file in your project folder
@@ -24,7 +24,8 @@ class Ami44939930Test extends org.scalatest.FunSuite {
       , keyName = "statika-launcher" 
       , deviceMapping = Map()
       , userData = userscript
-      , instanceProfileARN = Some("arn:aws:iam::857948138625:instance-profile/statika-tester")
+      , instanceProfileARN = Some("arn:aws:iam::857948138625:instance-profile/testing-god-mode")
+      //Some("arn:aws:iam::857948138625:instance-profile/statika-tester")
       )
 
     // we asked for 1 instance — we should get 1 instance
