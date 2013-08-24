@@ -11,7 +11,7 @@ case object AMI44939930 extends AbstractAMI("ami-44939930", "2013.03"){
     , B <: BundleAux : distribution.IsMember
     ](distribution: D
     , bundle: B
-    , credentials: Credentials
+    , credentials: Credentials = RoleCredentials
     ): String = {
 
       val mb = bundle.metadata
@@ -23,6 +23,9 @@ case object AMI44939930 extends AbstractAMI("ami-44939930", "2013.03"){
 # redirecting output for logging
 exec &> /root/log.txt
 
+echo "sudo tail -f /root/log.txt" > /bin/show-log
+chmod a+x /bin/show-log
+
 echo
 echo " -- Setting environment -- "
 echo
@@ -33,11 +36,6 @@ env
 """
 
   val credentialsSet = credentials match {
-//       case NoCredentials => ""
-//       case Explicit(usr,psw) => """
-// echo "accessKey = %s" >  /root/AwsCredentials.properties
-// echo "secretKey = %s" >> /root/AwsCredentials.properties
-//       """ format (usr, psw)
       case InBucket(bucket) => """
 echo
 echo " -- Installing git -- "
@@ -72,8 +70,6 @@ curl http://scalasbt.artifactoryonline.com/scalasbt/sbt-native-packages/org/scal
 yum install sbt.rpm -y 
 """
 
-  def moduleID(m: MetaData): String = 
-    "\"%s\" %%%% \"%s\" %% \"%s\"" format (m.organization, m.artifact, m.version)
 
   val building = """
 echo
@@ -94,23 +90,25 @@ sbt 'set name := "applicator"' \
   '%s' \
   'set resolvers ++= %s' \
   'set resolvers <++= s3credentials { cs => (%s map { r: S3Resolver => { cs map r.toSbtResolver } }).flatten }' \
-  'set libraryDependencies ++= Seq ("ohnosequences" %%%% "statika" %% "%s", %s %s)' \
+  'set libraryDependencies ++= Seq ("ohnosequences" %%%% "statika" %% "%s", %s)' \
   'set sourceGenerators in Compile <+= sourceManaged in Compile map { dir => val file = dir / "apply.scala"; IO.write(file, "%s"); Seq(file) }' \
   'session save' \
   'add-start-script-tasks' \
   'start-script'
 """ format (
     credentials match {
-      // hope that ivy-s3-resolver will use instance role credentials
-      case NoCredentials =>     s"""set s3credentials in Global := Some(("", ""))"""
-      case Explicit(usr,psw) => s"""set s3credentials in Global := Some(("usr", "psw"))"""
+      case NoCredentials =>     "set s3credentials in Global := None"
+      case RoleCredentials =>   """set s3credentials in Global := Some(("", ""))"""
+      case Explicit(usr,psw) => """set s3credentials in Global := Some(("%s", "%s"))""" format (usr, psw)
       case _ => """set s3credentialsFile in Global := Some("/root/AwsCredentials.properties")"""
     }
   , md.resolvers
   , md.privateResolvers
   , md.statikaVersion
-  , moduleID(md)
-  , if (moduleID(md) == moduleID(mb)) "" else ", "+moduleID(mb)
+  , { val mds = md.toString
+      val mbs = mb.toString
+      if (mds == mbs) mds else mds+", "+mbs
+    }
   , """object apply extends App {%s.installWithDeps(%s) map println}""" format (md.name, mb.name)
   )
 

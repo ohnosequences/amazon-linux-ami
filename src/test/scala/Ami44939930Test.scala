@@ -11,7 +11,7 @@ class Ami44939930Test extends org.scalatest.FunSuite {
 
   test("Running instance with Git bundle test"){
 
-    val userscript = DummyDistribution.userScript(AmazonLinuxAMIBundle, NoCredentials)
+    val userscript = DummyDistribution.userScript(AmazonLinuxAMIBundle, RoleCredentials)
       // InBucket("s3://private.snapshots.statika.ohnosequences.com/credentials/AwsCredentials.properties"))
     println(userscript)
 
@@ -20,12 +20,11 @@ class Ami44939930Test extends org.scalatest.FunSuite {
 
     val specs = InstanceSpecs(
         instanceType = InstanceType.InstanceType("c1.medium")
-      , amiId = AMI44939930.id
+      , amiId = DummyDistribution.ami.id
       , keyName = "statika-launcher" 
       , deviceMapping = Map()
       , userData = userscript
-      , instanceProfileARN = Some("arn:aws:iam::857948138625:instance-profile/testing-god-mode")
-      //Some("arn:aws:iam::857948138625:instance-profile/statika-tester")
+      , instanceProfileARN = DummyDistribution.metadata.instanceProfileARN
       )
 
     // we asked for 1 instance — we should get 1 instance
