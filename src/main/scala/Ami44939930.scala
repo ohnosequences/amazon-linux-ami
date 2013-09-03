@@ -41,7 +41,7 @@ env
 echo
 echo " -- Tagging instance -- "
 echo
-ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=userscript
+ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=running-userscript
 """
 
   val credentialsSet = credentials match {
@@ -75,7 +75,6 @@ s3cmd --config /root/.s3cfg get %s""" format bucket
 echo
 echo " -- Installing sbt -- "
 echo
-ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=sbt
 curl http://scalasbt.artifactoryonline.com/scalasbt/sbt-native-packages/org/scala-sbt/sbt/0.12.3/sbt.rpm > sbt.rpm
 yum install sbt.rpm -y 
 """
@@ -139,7 +138,7 @@ sbt 'set name := "applicator"' \
 echo
 echo " -- Running -- "
 echo
-ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=running
+ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=applying
 target/start
 """
 
