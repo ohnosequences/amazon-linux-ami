@@ -8,5 +8,6 @@ bundleObjects := Seq(
 )
 
 libraryDependencies ++= Seq(
-  "ohnosequences" % "statika-cli_2.10.2" % "0.15.1" % "test"
+  // "ohnosequences" % "statika-cli_2.10.2" % "0.15.1" % "test"
+  "ohnosequences" % "statika-cli_2.10.2" % "0.16.0-SNAPSHOT" % "test"
 )

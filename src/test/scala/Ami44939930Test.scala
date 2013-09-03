@@ -9,10 +9,9 @@ class Ami44939930Test extends org.scalatest.FunSuite {
   import ohnosequences.awstools.ec2._
   import java.io._
 
-  test("Running instance with Git bundle test"){
+  test("Running instance with Ami44939930 bundle test"){
 
     val userscript = DummyDistribution.userScript(AmazonLinuxAMIBundle, RoleCredentials)
-      // InBucket("s3://private.snapshots.statika.ohnosequences.com/credentials/AwsCredentials.properties"))
     println(userscript)
 
     // for running test you need to have this file in your project folder
@@ -28,7 +27,8 @@ class Ami44939930Test extends org.scalatest.FunSuite {
       )
 
     // we asked for 1 instance — we should get 1 instance
-    ec2.runInstancesAndWait(1, specs).length == 1
+    // ec2.runInstancesAndWait(1, specs).length == 1
+    ec2.applyAndWait(specs)
   }
 
 }

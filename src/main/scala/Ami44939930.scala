@@ -21,9 +21,10 @@ case object AMI44939930 extends AbstractAMI("ami-44939930", "2013.03"){
 """#!/bin/sh
 
 # redirecting output for logging
-exec &> /root/log.txt
+exec &> /log.txt
 
-echo "sudo tail -f /root/log.txt" > /bin/show-log
+echo "tail -f /log.txt" > /bin/show-log
+chmod a+r /log.txt
 chmod a+x /bin/show-log
 
 echo
@@ -31,8 +32,16 @@ echo " -- Setting environment -- "
 echo
 cd /root
 export HOME="/root"
-export PATH="/root/bin:$PATH"
+export PATH="/root/bin:/opt/aws/bin:$PATH"
+export ec2id=$(GET http://169.254.169.254/latest/meta-data/instance-id)
+export EC2_HOME=/opt/aws/apitools/ec2
+export JAVA_HOME=/usr/lib/jvm/jre
 env
+
+echo
+echo " -- Tagging instance -- "
+echo
+ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=userscript
 """
 
   val credentialsSet = credentials match {
@@ -66,15 +75,18 @@ s3cmd --config /root/.s3cfg get %s""" format bucket
 echo
 echo " -- Installing sbt -- "
 echo
+ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=sbt
 curl http://scalasbt.artifactoryonline.com/scalasbt/sbt-native-packages/org/scala-sbt/sbt/0.12.3/sbt.rpm > sbt.rpm
 yum install sbt.rpm -y 
 """
 
+  val tagCode = """    Seq(\"ec2-create-tags\", Seq(\"GET\", \"http://169.254.169.254/latest/meta-data/instance-id\").!!.replaceAll(\"\\n\",\"\"), \"--region\", \"eu-west-1\", \"--tag\", \"statika-status=%s\").!"""
 
   val building = """
 echo
 echo " -- Building Applicator -- "
 echo
+ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=building
 mkdir applicator
 cd applicator
 sbt 'set name := "applicator"' \
@@ -109,13 +121,25 @@ sbt 'set name := "applicator"' \
       val mbs = mb.toString
       if (mds == mbs) mds else mds+", "+mbs
     }
-  , """object apply extends App {%s.installWithDeps(%s) map println}""" format (md.name, mb.name)
+  , Seq(
+      "import sys.process._;"
+    , "object apply extends App {"
+    , "  val results = %s.installWithDeps(%s);"
+    , "  results foreach println;"
+    , "  if (results exists (_.isLeft)) { "
+    , tagCode format "failure"
+    , "  } else {"
+    , tagCode format "success"
+    , "  }"
+    , "}"
+    ).mkString format (md.name, mb.name)
   )
 
   val running = """
 echo
 echo " -- Running -- "
 echo
+ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=running
 target/start
 """
 
