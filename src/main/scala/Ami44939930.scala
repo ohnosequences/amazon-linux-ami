@@ -3,15 +3,16 @@ package ohnosequences.statika.ami
 // Abstract library and a statika bundle for ami-44939930
 
 import ohnosequences.statika._
+import aws._
 
 case object AMI44939930 extends AbstractAMI("ami-44939930", "2013.03"){
 
   def userScript[
-      D <: DistributionAux
-    , B <: BundleAux : distribution.IsMember
+      D <: AnyDistribution
+    , B <: AnyBundle : distribution.IsMember
     ](distribution: D
     , bundle: B
-    , credentials: Credentials = RoleCredentials
+    , credentials: AWSCredentials = RoleCredentials
     ): String = {
 
       val mb = bundle.metadata
@@ -125,7 +126,7 @@ sbt 'set name := "applicator"' \
     , "object apply extends App {"
     , "  val results = %s.installWithDeps(%s);"
     , "  results foreach println;"
-    , "  if (results exists (_.isLeft)) { "
+    , "  if (results.hasFailures) { "
     , tagCode format "failure"
     , "  } else {"
     , tagCode format "success"
@@ -154,6 +155,6 @@ case object AmazonLinuxAMIBundle extends Bundle() {
 
   val ami = AMI44939930
 
-  def install[D <: DistributionAux](distribution: D): InstallResults = ami.checkID
+  def install[D <: AnyDistribution](distribution: D): InstallResults = ami.checkID
 
 }
