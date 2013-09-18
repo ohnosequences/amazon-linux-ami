@@ -1,9 +1,11 @@
 package ohnosequences.statika.ami
 
 import ohnosequences.statika._
-import aws._
+import ohnosequences.statika.aws._
+
 
 case object AMI44939930 extends AmazonLinuxAMI("ami-44939930", "2013.03")
+
 
 /*
 Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that one can extend it and redefine behaviour, of some part, reusing others.
@@ -13,6 +15,9 @@ Note the `withTags` value, using it you can turn off status tags for the instanc
 abstract class AmazonLinuxAMI(id: String, amiVersion: String) 
           extends AbstractAMI(id,         amiVersion) {
 
+  
+  // First of all, `initSetting` part sets up logging.
+  // Then it sets useful environment variables.
   val initSetting = """
     |
     |# redirecting output for logging
@@ -35,6 +40,8 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |env
     |""".stripMargin
 
+  
+  // Installing sbt-0.13.0 using rpm.
   val sbtInstalling = """
     |echo
     |echo " -- Installing sbt -- "
@@ -43,7 +50,11 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |yum install sbt.rpm -y 
     |""".stripMargin
 
+
+  // This part sets up credentials if they are in an S3 bucket.
+  // It installs git, then installs s3cmd, then downloads credentials. 
   def credsSetting(creds: AWSCredentials) = creds match {
+    // this way of setting credentials should be deprecated!
     case InBucket(bucket) => """
       |echo
       |echo " -- Installing git -- "
@@ -71,6 +82,8 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     case _ => ""
   }
 
+  
+  // This is the main part of the script: building applicator project.
   def building[
       D <: AnyDistribution
     , B <: AnyBundle : distribution.IsMember
@@ -114,6 +127,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
           (distribution.metadata.name, bundle.metadata.name)
       )
 
+  // Just running the applicator project (using sbt-start-script).
   val applying = """
     |echo
     |echo " -- Running -- "
@@ -122,13 +136,14 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |""".stripMargin
 
 
+  // Instance status-tagging is optional.
   val withTags: Boolean = true
 
   def tag(state: String) = if (!withTags) ""
     else "ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=" + state
 
 
-  // combining all parts to one script
+  // Combining all parts to one script.
   def userScript[
       D <: AnyDistribution
     , B <: AnyBundle : distribution.IsMember
