@@ -10,15 +10,22 @@ organizationHomepage := Some(url("http://ohnosequences.com"))
 
 licenses := Seq("AGPLv3" -> url("http://www.gnu.org/licenses/agpl-3.0.txt"))
 
-bundleObjects := Seq(
-  "ohnosequences.statika.ami.AmazonLinuxAMIBundle"
-, "ohnosequences.statika.ami.tests.DummyDistribution"
-)
 
-libraryDependencies ++= Seq(
-  // "ohnosequences" % "statika-cli_2.10.2" % "0.15.1" % "test"
-  "ohnosequences" % "statika-cli_2.10.2" % "0.16.0-SNAPSHOT" % "test"
-)
+publishMavenStyle := true
+
+publishTo <<= (isSnapshot, s3credentials) { 
+                (snapshot,   credentials) => 
+  val prefix = if (snapshot) "snapshots" else "releases"
+  credentials map S3Resolver(
+      "Era7 "+prefix+" S3 bucket"
+    , "s3://"+prefix+".era7.com"
+    , Resolver.mavenStylePatterns
+    ).toSbtResolver
+}
+
+
+
+// temporary
 
 statikaVersion := "0.15.0-SNAPSHOT"
 
