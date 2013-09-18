@@ -2,11 +2,18 @@ name := "ami-44939930"
 
 description := "Abstract library and a statika bundle for ami-44939930"
 
-bundleObjects := Seq(
-  "ohnosequences.statika.ami.AmazonLinuxAMIBundle"
-, "ohnosequences.statika.ami.tests.DummyDistribution"
-)
+homepage := Some(url("https://github.com/statika/ami-44939930"))
 
-libraryDependencies ++= Seq(
-  "ohnosequences" % "statika-cli_2.10.2" % "0.15.1" % "test"
-)
+organization := "ohnosequences"
+
+organizationHomepage := Some(url("http://ohnosequences.com"))
+
+licenses := Seq("AGPLv3" -> url("http://www.gnu.org/licenses/agpl-3.0.txt"))
+
+
+publishMavenStyle := true
+
+publishBucketSuffix := "era7.com"
+
+// no dependencies — no resolvers
+publicResolvers := Seq()
