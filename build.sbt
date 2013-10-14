@@ -18,4 +18,4 @@ publishBucketSuffix := "era7.com"
 // no dependencies — no resolvers
 publicResolvers := Seq()
 
-libraryDependencies ++= Seq( "ohnosequences" %% "aws-statika" % "0.2.0" )
+libraryDependencies ++= Seq( "ohnosequences" %% "aws-statika" % "0.3.0" )
