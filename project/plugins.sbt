@@ -3,4 +3,4 @@ resolvers ++= Seq(
 , "Era7 maven snapshots"  at "http://snapshots.era7.com.s3.amazonaws.com"
 )
 
-addSbtPlugin("ohnosequences" % "sbt-statika" % "0.9.0")
+addSbtPlugin( "ohnosequences" % "sbt-statika" % "0.10.0-SNAPSHOT" )

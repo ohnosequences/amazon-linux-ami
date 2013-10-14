@@ -86,7 +86,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   // This is the main part of the script: building applicator project.
   def building[
       D <: AnyDistribution
-    , B <: AnyBundle : distribution.IsMember
+    , B <: AnyBundle : distribution.isMember
     ](distribution: D
     , bundle: B
     , credentials: AWSCredentials
@@ -146,7 +146,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   // Combining all parts to one script.
   def userScript[
       D <: AnyDistribution
-    , B <: AnyBundle : distribution.IsMember
+    , B <: AnyBundle : distribution.isMember : distribution.isInstallable
     ](distribution: D
     , bundle: B
     , credentials: AWSCredentials = RoleCredentials
