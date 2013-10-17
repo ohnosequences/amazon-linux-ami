@@ -19,7 +19,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   /*  First of all, `initSetting` part sets up logging.
       Then it sets useful environment variables.
   */  
-  val initSetting = """
+  def initSetting = """
     |
     |# redirecting output for logging
     |exec &> /log.txt
@@ -43,7 +43,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
 
   
   /* Installing sbt-0.13.0 using rpm. */
-  val sbtInstalling = """
+  def sbtInstalling = """
     |echo
     |echo " -- Installing sbt -- "
     |echo
@@ -86,13 +86,8 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
 
   
   /* This is the main part of the script: building applicator project. */
-  def building[
-      D <: AnyDistribution
-    , B <: AnyBundle : distribution.isMember
-    ](distribution: D
-    , bundle: B
-    , credentials: AWSCredentials
-    ): String = """
+  def building[M <: MetadataBound]
+    (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String = """
     |echo
     |echo " -- Building Applicator -- "
     |echo
@@ -116,21 +111,21 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |  'add-start-script-tasks' \
     |  'start-script'
     |""".stripMargin format (
-        credentials match {
+        creds match {
           case NoCredentials     => """s3credentials := None"""
           case RoleCredentials   => """s3credentials := Some(("", ""))"""
           case Explicit(usr,psw) => """s3credentials := Some(("%s", "%s"))""" format (usr, psw)
           case _                 => """s3credentialsFile := Some("/root/AwsCredentials.properties")"""
         }
-      , distribution.metadata.resolvers
-      , distribution.metadata.privateResolvers
-      , distribution.metadata.toString
+      , md.resolvers
+      , md.privateResolvers
+      , md.moduleID
       , "object apply extends App { %s.installWithDeps(%s) foreach println }" format 
-          (distribution.metadata.name, bundle.metadata.name)
+          (distName, bundleName)
       )
 
   /* Just running the applicator project (using sbt-start-script). */
-  val applying = """
+  def applying = """
     |echo
     |echo " -- Running -- "
     |echo
@@ -139,24 +134,21 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
 
 
   /* Instance status-tagging is optional. */
-  val withTags: Boolean = true
+  def withTags: Boolean = true
 
   def tag(state: String) = if (!withTags) ""
     else "ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=" + state
 
 
   /* Combining all parts to one script. */
-  def userScript[
-      D <: AnyDistribution
-    , B <: AnyBundle : distribution.isMember : distribution.isInstallable
-    ](distribution: D
-    , bundle: B
-    , credentials: AWSCredentials = RoleCredentials
-    ): String = {
+  type MetadataBound = SbtMetadata
+
+  override def userScript[M <: MetadataBound]
+    (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String = {
 
     "#!/bin/sh \n"   + initSetting + 
-    tag("preparing") + sbtInstalling + credsSetting(credentials) +
-    tag("building")  + building(distribution, bundle, credentials) + 
+    tag("preparing") + sbtInstalling + credsSetting(creds) +
+    tag("building")  + building(md, distName, bundleName, creds) + 
     tag("applying")  + applying +
     { if (!withTags) "" else "[ $? ] && " + tag("success") + " || " + tag("failure") }
 
