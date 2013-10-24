@@ -87,42 +87,41 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   
   /* This is the main part of the script: building applicator project. */
   def building[M <: MetadataBound]
-    (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String = """
+    (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String = {"""
     |echo
     |echo " -- Building Applicator -- "
     |echo
     |mkdir applicator
     |cd applicator
     |sbt 'set name := "applicator"' \
-    |  'set scalaVersion := "2.10.2"' \
+    |  'set scalaVersion := "2.10.3"' \
     |  'session save' \
     |  'reload plugins' \
     |  'set resolvers += "Era7 releases" at "http://releases.era7.com.s3.amazonaws.com"' \
-    |  'set addSbtPlugin("ohnosequences" %% "sbt-s3-resolver" %% "0.6.0")' \
-    |  'set addSbtPlugin("com.typesafe.sbt" %% "sbt-start-script" %% "0.10.0")' \
+    |  'set addSbtPlugin("ohnosequences" % "sbt-s3-resolver" % "0.7.0")' \
+    |  'set addSbtPlugin("com.typesafe.sbt" % "sbt-start-script" % "0.10.0")' \
     |  'session save' \
     |  'reload return' \
-    |  'set %s' \
-    |  'set resolvers ++= %s' \
-    |  'set resolvers <++= s3credentials { cs => (%s map { r: S3Resolver => { cs map r.toSbtResolver } }).flatten }' \
-    |  'set libraryDependencies ++= Seq (%s)' \
-    |  'set sourceGenerators in Compile <+= sourceManaged in Compile map { dir => val file = dir / "apply.scala"; IO.write(file, "%s"); Seq(file) }' \
+    |  'set $credentials$' \
+    |  'set resolvers ++= $resolvers$' \
+    |  'set resolvers ++= { $privateResolvers$ map { r => s3credentials.value map r.toSbtResolver } flatten }' \
+    |  'set libraryDependencies ++= Seq ($artifact$)' \
+    |  'set sourceGenerators in Compile <+= sourceManaged in Compile map { dir => val file = dir / "apply.scala"; IO.write(file, "$code$"); Seq(file) }' \
     |  'session save' \
     |  'add-start-script-tasks' \
     |  'start-script'
-    |""".stripMargin format (
-        creds match {
+    |""".stripMargin.
+      replace("$credentials$", creds match {
           case NoCredentials     => """s3credentials := None"""
           case RoleCredentials   => """s3credentials := Some(("", ""))"""
           case Explicit(usr,psw) => """s3credentials := Some(("%s", "%s"))""" format (usr, psw)
           case _                 => """s3credentialsFile := Some("/root/AwsCredentials.properties")"""
-        }
-      , md.resolvers
-      , md.privateResolvers
-      , md.moduleID
-      , "object apply extends App { %s.installWithDeps(%s) foreach println }" format 
-          (distName, bundleName)
-      )
+        }).
+      replace("$resolvers$", md.resolvers.toString).
+      replace("$privateResolvers$", md.privateResolvers.toString).
+      replace("$artifact$", md.moduleID).
+      replace("$code$", "object apply extends App { %s.installWithDeps(%s) foreach println }" format (distName, bundleName))
+    }
 
   /* Just running the applicator project (using sbt-start-script). */
   def applying = """

@@ -18,4 +18,4 @@ publishBucketSuffix := "era7.com"
 // no dependencies — no resolvers
 publicResolvers := Seq()
 
-awsStatikaVersion := "0.4.0-SNAPSHOT"
+awsStatikaVersion := "0.4.0"
