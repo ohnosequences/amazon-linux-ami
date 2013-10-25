@@ -104,7 +104,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |  'reload return' \
     |  'set $credentials$' \
     |  'set resolvers ++= $resolvers$' \
-    |  'set resolvers ++= { $privateResolvers$ map { r => s3credentials.value map r.toSbtResolver } flatten }' \
+    |  'set resolvers ++= { $privateResolvers$ map { r: S3Resolver => s3credentials.value map r.toSbtResolver } flatten }' \
     |  'set libraryDependencies ++= Seq ($artifact$)' \
     |  'set sourceGenerators in Compile <+= sourceManaged in Compile map { dir => val file = dir / "apply.scala"; IO.write(file, "$code$"); Seq(file) }' \
     |  'session save' \
@@ -120,7 +120,13 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
       replace("$resolvers$", md.resolvers.toString).
       replace("$privateResolvers$", md.privateResolvers.toString).
       replace("$artifact$", md.moduleID).
-      replace("$code$", "object apply extends App { %s.installWithDeps(%s) foreach println }" format (distName, bundleName))
+      replace("$code$", Seq(
+          "object apply extends App {"
+        , "  val results = %s.installWithDeps(%s);"
+        , "  results foreach println;"
+        , "  if (results.hasFailures) sys.error(results.toString)"
+        , "}"
+        ).mkString.format(distName, bundleName))
     }
 
   /* Just running the applicator project (using sbt-start-script). */
@@ -148,8 +154,9 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     "#!/bin/sh \n"   + initSetting + 
     tag("preparing") + sbtInstalling + credsSetting(creds) +
     tag("building")  + building(md, distName, bundleName, creds) + 
-    tag("applying")  + applying +
-    { if (!withTags) "" else "[ $? ] && " + tag("success") + " || " + tag("failure") }
+    { "[ $? = 0 ] && " + tag("applying") + " || " + tag("failure") } +
+    applying +
+    { "[ $? = 0 ] && " + tag("success") + " || " + tag("failure") }
 
   }
 
