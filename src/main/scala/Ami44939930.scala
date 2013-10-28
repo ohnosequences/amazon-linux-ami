@@ -9,8 +9,6 @@ case object AMI44939930 extends AmazonLinuxAMI("ami-44939930", "2013.03")
 
 /*  Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that 
     one can extend it and redefine behaviour, of some part, reusing others.
-
-    Note the `withTags` value, using it you can turn off status tags for the instance.
 */
 abstract class AmazonLinuxAMI(id: String, amiVersion: String) 
           extends AbstractAMI(id,         amiVersion) {
@@ -115,11 +113,12 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
 
 
   /* Instance status-tagging is optional — just override this method. */
-  def tag(state: String) =
-    """printf "\n\n -- """ + state + """ -- \n\n"; """ ++ {
-      if (!withTags) "" else 
-        "ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=" + state
-    }
+  def tag(state: String) = """
+    |echo
+    |echo " -- $state$ -- "
+    |echo
+    |ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=$state$
+    |""".stripMargin.replace("$state$", state)
 
 
   /* Combining all parts to one script. */
