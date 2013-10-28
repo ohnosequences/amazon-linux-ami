@@ -9,8 +9,6 @@ case object AMI44939930 extends AmazonLinuxAMI("ami-44939930", "2013.03")
 
 /*  Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that 
     one can extend it and redefine behaviour, of some part, reusing others.
-
-    Note the `withTags` value, using it you can turn off status tags for the instance.
 */
 abstract class AmazonLinuxAMI(id: String, amiVersion: String) 
           extends AbstractAMI(id,         amiVersion) {
@@ -29,9 +27,6 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |chmod a+x /bin/show-log
     |ln -s /log.txt /root/log.txt
     |
-    |echo
-    |echo " -- Setting environment -- "
-    |echo
     |cd /root
     |export HOME="/root"
     |export PATH="/root/bin:/opt/aws/bin:$PATH"
@@ -44,9 +39,6 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   
   /* Installing sbt-0.13.0 using rpm. */
   def sbtInstalling = """
-    |echo
-    |echo " -- Installing sbt -- "
-    |echo
     |curl http://scalasbt.artifactoryonline.com/scalasbt/sbt-native-packages/org/scala-sbt/sbt/0.13.0/sbt.rpm > sbt.rpm
     |yum install sbt.rpm -y 
     |""".stripMargin
@@ -58,27 +50,17 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   def credsSetting(creds: AWSCredentials) = creds match {
     // this way of setting credentials should be deprecated!
     case InBucket(bucket) => """
-      |echo
-      |echo " -- Installing git -- "
-      |echo
       |yum install git -y
       |
-      |echo
-      |echo " -- Installing s3cmd -- "
-      |echo
       |git clone https://github.com/s3tools/s3cmd.git
       |cd s3cmd/
       |python setup.py install
       |cd /root
       |
-      |echo
       |echo " -- Creating empty s3cmd config, it will use IAM role -- "
       |echo "[default]" > /root/.s3cfg
       |cat /root/.s3cfg
       |
-      |echo
-      |echo " -- Getting credentials -- "
-      |echo
       |s3cmd --config /root/.s3cfg get %s
       |""".stripMargin format bucket
     case _ => ""
@@ -88,9 +70,6 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   /* This is the main part of the script: building applicator project. */
   def building[M <: MetadataBound]
     (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String = {"""
-    |echo
-    |echo " -- Building Applicator -- "
-    |echo
     |mkdir applicator
     |cd applicator
     |sbt 'set name := "applicator"' \
@@ -130,19 +109,16 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     }
 
   /* Just running the applicator project (using sbt-start-script). */
-  def applying = """
+  def applying = "target/start\n"
+
+
+  /* Instance status-tagging is optional — just override this method. */
+  def tag(state: String) = """
     |echo
-    |echo " -- Running -- "
+    |echo " -- $state$ -- "
     |echo
-    |target/start
-    |""".stripMargin
-
-
-  /* Instance status-tagging is optional. */
-  def withTags: Boolean = true
-
-  def tag(state: String) = if (!withTags) ""
-    else "ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=" + state
+    |ec2-create-tags  $ec2id  --region eu-west-1  --tag statika-status=$state$
+    |""".stripMargin.replace("$state$", state)
 
 
   /* Combining all parts to one script. */
@@ -154,9 +130,23 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     "#!/bin/sh \n"   + initSetting + 
     tag("preparing") + sbtInstalling + credsSetting(creds) +
     tag("building")  + building(md, distName, bundleName, creds) + 
-    { "[ $? = 0 ] && " + tag("applying") + " || " + tag("failure") } +
+    {s"""
+      |if [ $$? = 0 ]; then
+      |  ${tag("applying")}
+      |else
+      |  ${tag("failure")}
+      |fi
+      |""".stripMargin
+    } +
     applying +
-    { "[ $? = 0 ] && " + tag("success") + " || " + tag("failure") }
+    {s"""
+      |if [ $$? = 0 ]; then
+      |  ${tag("success")}
+      |else
+      |  ${tag("failure")}
+      |fi
+      |""".stripMargin
+    }
 
   }
 
