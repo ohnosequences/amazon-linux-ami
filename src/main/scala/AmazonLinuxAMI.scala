@@ -32,7 +32,18 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |export JAVA_HOME=/usr/lib/jvm/jre
     |export AWS_DEFAULT_REGION=$region$
     |env
-    |""".stripMargin.replace("$region$", region)
+    |
+    |function tagStep(){
+    |  if [ $1 = 0 ]; then
+    |    $tagOk$
+    |  else
+    |    $tagFail$
+    |  fi
+    |}
+    |""".stripMargin.
+      replace("$region$", region).
+      replace("$tagOk$", tag("$2")).
+      replace("$tagFail$", tag("failure"))
 
   /*  This part should make any necessary for building preparations, 
       like installing build tools and setting credentials, etc.
@@ -50,13 +61,9 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   def tag(state: String): String
 
   // checks exit code of the previous step
-  def tagStep(state: String) = s"""
-    |if [ $$? = 0 ]; then
-    |  ${tag(state)}
-    |else
-    |  ${tag("failure")}
-    |fi
-    |""".stripMargin
+  def tagStep(state: String) = """
+    |tagStep $? $state$
+    |""".stripMargin.replace("$state$", state)
 
   /* Combining all parts to one script. */
   override def userScript[M <: MetadataBound]
