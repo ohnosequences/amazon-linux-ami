@@ -151,3 +151,96 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   }
 
 }
+
+trait FatMetadata extends AnyMetadata {
+  val fatUrl: String
+}
+
+case object AMI149f7863 extends AbstractAMI("ami-149f7863", "2013.09") {
+
+  def initSetting = """
+    |
+    |# redirecting output for logging
+    |exec &> /log.txt
+    |
+    |echo "tail -f /log.txt" > /bin/show-log
+    |chmod a+r /log.txt
+    |chmod a+x /bin/show-log
+    |ln -s /log.txt /root/log.txt
+    |
+    |cd /root
+    |export HOME="/root"
+    |export PATH="/root/bin:/opt/aws/bin:$PATH"
+    |export ec2id=$(GET http://169.254.169.254/latest/meta-data/instance-id)
+    |export EC2_HOME=/opt/aws/apitools/ec2
+    |export JAVA_HOME=/usr/lib/jvm/jre
+    |export AWS_DEFAULT_REGION=eu-west-1
+    |env
+    |""".stripMargin
+
+  def installScala = """
+  |curl http://www.scala-lang.org/files/archive/scala-2.10.3.rpm > scala.rpm
+  |yum install scala.rpm -y
+  |""".stripMargin
+
+  def build(url: String, distName: String, bundleName: String) = """
+  |mkdir applicator
+  |cd applicator
+  |
+  |echo "object apply extends App { " > apply.scala
+  |echo "  val results = $distName$.installWithDeps($bundleName$); " >> apply.scala
+  |echo "  results foreach println; " >> apply.scala
+  |echo "  if (results.hasFailures) sys.error(results.toString) " >> apply.scala
+  |echo "}" >> apply.scala
+  |cat apply.scala
+  |
+  |aws s3 cp $url$ dist.jar
+  |
+  |scalac -cp dist.jar apply.scala
+  |""".stripMargin.
+       replace("$url$", url).
+       replace("$distName$", distName).
+       replace("$bundleName$", bundleName)
+
+  def apply: String = """
+  |java -classpath .:./dist.jar apply
+  |""".stripMargin
+
+
+  /* Instance status-tagging is optional — just override this method. */
+  def tag(state: String) = """
+    |echo
+    |echo " -- $state$ -- "
+    |echo
+    |aws ec2 create-tags --resources $ec2id  --tag Key=statika-status,Value=$state$
+    |""".stripMargin.replace("$state$", state)
+
+  /* Combining all parts to one script. */
+  type MetadataBound = FatMetadata
+
+  override def userScript[M <: MetadataBound]
+    (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String = {
+
+    "#!/bin/sh \n"   + initSetting + 
+    tag("preparing") + installScala +
+    tag("building") + build(md.fatUrl, distName, bundleName) +
+    {s"""
+      |if [ $$? = 0 ]; then
+      |  ${tag("applying")}
+      |else
+      |  ${tag("failure")}
+      |fi
+      |""".stripMargin
+    } + apply +
+    {s"""
+      |if [ $$? = 0 ]; then
+      |  ${tag("success")}
+      |else
+      |  ${tag("failure")}
+      |fi
+      |""".stripMargin
+    }
+
+  }
+
+}
