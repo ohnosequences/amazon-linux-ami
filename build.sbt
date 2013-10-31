@@ -1,8 +1,8 @@
-name := "ami-44939930"
+name := "amazon-linux-ami"
 
-description := "Abstract library and a statika bundle for ami-44939930"
+description := "Abstract library and a statika bundle for amazon-linux-ami"
 
-homepage := Some(url("https://github.com/statika/ami-44939930"))
+homepage := Some(url("https://github.com/ohnosequences/amazon-linux-ami"))
 
 organization := "ohnosequences"
 
