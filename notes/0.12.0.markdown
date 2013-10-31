@@ -1,0 +1,6 @@
+* Renamed project to amazon-linux-ami
+* Changed tagging in the user script
+* Restructured code:
+  + separated common part
+  + AMIs to different files
+* Started using aws-statika-0.5;
