@@ -51,8 +51,12 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
   def preparing(creds: AWSCredentials): String
 
   /* This is the main part of the script: building applicator. */
-  def building[M <: MetadataBound]
-    (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String
+  def building(
+      md: Metadata
+    , distName: String
+    , bundleName: String
+    , creds: AWSCredentials = RoleCredentials
+    ): String
 
   /* Just running what we built. */
   def applying: String
@@ -66,13 +70,17 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
     |""".stripMargin.replace("$state$", state)
 
   /* Combining all parts to one script. */
-  override def userScript[M <: MetadataBound]
-    (md: M, distName: String, bundleName: String, creds: AWSCredentials = RoleCredentials): String = {
-    "#!/bin/sh \n"       + initSetting + 
-    tagStep("preparing") + preparing(creds) +
-    tagStep("building")  + building(md, distName, bundleName, creds) + 
-    tagStep("applying")  + applying +
-    tagStep("success")
+  def userScript(
+      md: Metadata
+    , distName: String
+    , bundleName: String
+    , creds: AWSCredentials = RoleCredentials
+    ): String = {
+      "#!/bin/sh \n"       + initSetting + 
+      tagStep("preparing") + preparing(creds) +
+      tagStep("building")  + building(md, distName, bundleName, creds) + 
+      tagStep("applying")  + applying +
+      tagStep("success")
   }
 
 }

@@ -5,21 +5,22 @@ import ohnosequences.statika.aws._
 
 case object AMI149f7863 extends AmazonLinuxAMI("ami-149f7863", "2013.09") {
 
-  type MetadataBound = FatJarMetadata
+  type Metadata = FatJarMetadata
 
 
   // just installig scala-2.10.3 from rpm
   // TODO: take care of credentials (now it uses just role credentials)
   def preparing(creds: AWSCredentials) = """
     |curl http://www.scala-lang.org/files/archive/scala-2.10.3.rpm > scala.rpm
-    |yum install scala.rpm -y
+    |yum install scala.rpm java-1.7.0-openjdk -y
     |""".stripMargin
 
-  def building[M <: MetadataBound](md: M
-  , distName: String
-  , bundleName: String
-  , creds: AWSCredentials = RoleCredentials
-  ): String = s"""
+  def building(
+      md: Metadata
+    , distName: String
+    , bundleName: String
+    , creds: AWSCredentials = RoleCredentials
+    ): String = s"""
     |mkdir applicator
     |cd applicator
     |
@@ -36,7 +37,7 @@ case object AMI149f7863 extends AmazonLinuxAMI("ami-149f7863", "2013.09") {
     |""".stripMargin
 
   def applying: String = """
-    |java -classpath .:dist.jar apply
+    |java7 -cp .:dist.jar apply
     |""".stripMargin
 
   def tag(state: String): String = s"""
