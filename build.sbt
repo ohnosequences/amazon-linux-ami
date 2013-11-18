@@ -8,4 +8,4 @@ organization := "ohnosequences"
 
 bucketSuffix := "era7.com"
 
-libraryDependencies += "ohnosequences" %% "aws-statika" % "1.0.0-RC3"
+libraryDependencies += "ohnosequences" %% "aws-statika" % "1.0.0"
