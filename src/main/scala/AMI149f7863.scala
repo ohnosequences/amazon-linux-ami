@@ -3,10 +3,7 @@ package ohnosequences.statika.ami
 import ohnosequences.statika._
 import ohnosequences.statika.aws._
 
-case object AMI149f7863 extends AmazonLinuxAMI("ami-149f7863", "2013.09") {
-
-  type Metadata = FatJarMetadata
-
+case object AMI149f7863 extends AmazonLinuxAMI[FatJarMetadata]("ami-149f7863", "2013.09") {
 
   // just installig scala-2.10.3 from rpm
   // TODO: take care of credentials (now it uses just role credentials)
@@ -16,7 +13,7 @@ case object AMI149f7863 extends AmazonLinuxAMI("ami-149f7863", "2013.09") {
     |""".stripMargin
 
   def building(
-      md: Metadata
+      md: MetadataBound
     , distName: String
     , bundleName: String
     , creds: AWSCredentials = RoleCredentials

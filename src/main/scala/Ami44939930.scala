@@ -4,10 +4,7 @@ import ohnosequences.statika._
 import ohnosequences.statika.aws._
 
 @deprecated("This is old Amazon Linux AMI with slow user script, please, use AMI149f7863 instead", "v0.12.0")
-case object AMI44939930 extends AmazonLinuxAMI("ami-44939930", "2013.03") {
-  
-  type Metadata = SbtMetadata
-
+case object AMI44939930 extends AmazonLinuxAMI[SbtMetadata]("ami-44939930", "2013.03") {
 
   /* Installing sbt-0.13.0 using rpm. */
   def sbtInstalling = """
@@ -40,7 +37,7 @@ case object AMI44939930 extends AmazonLinuxAMI("ami-44939930", "2013.03") {
   def preparing(creds: AWSCredentials) = sbtInstalling + credsSetting(creds)
   
   def building(
-      md: Metadata
+      md: MetadataBound
     , distName: String
     , bundleName: String
     , creds: AWSCredentials = RoleCredentials

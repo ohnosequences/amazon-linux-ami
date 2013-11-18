@@ -6,8 +6,8 @@ import ohnosequences.statika.aws._
 /*  Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that 
     one can extend it and redefine behaviour, of some part, reusing others.
 */
-abstract class AmazonLinuxAMI(id: String, amiVersion: String) 
-          extends AbstractAMI(id,         amiVersion) {
+abstract class AmazonLinuxAMI[MB <: AnyMetadata](id: String, amiVersion: String) 
+  extends AMI[MB](id, amiVersion) {
 
   def region: String = "eu-west-1"
 
@@ -52,7 +52,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
 
   /* This is the main part of the script: building applicator. */
   def building(
-      md: Metadata
+      md: MetadataBound
     , distName: String
     , bundleName: String
     , creds: AWSCredentials = RoleCredentials
@@ -71,7 +71,7 @@ abstract class AmazonLinuxAMI(id: String, amiVersion: String)
 
   /* Combining all parts to one script. */
   def userScript(
-      md: Metadata
+      md: MetadataBound
     , distName: String
     , bundleName: String
     , creds: AWSCredentials = RoleCredentials
