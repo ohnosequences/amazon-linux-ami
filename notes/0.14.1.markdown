@@ -1,0 +1,5 @@
+Java related changes in `ami-149f7863` user script: 
+
+* removing installed java 
+* using oracle java7 
+* using both java and scala rpms from our own s3 bucket
