@@ -1,0 +1,1 @@
+Corresponds to statika and aws-statika `v1.0.0` stable release
