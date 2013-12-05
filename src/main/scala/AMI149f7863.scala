@@ -5,11 +5,13 @@ import ohnosequences.statika.aws._
 
 case object AMI149f7863 extends AmazonLinuxAMI[FatJarMetadata]("ami-149f7863", "2013.09") {
 
-  // just installig scala-2.10.3 from rpm
+  // just installig java-7 and scala-2.10.3 from rpm's
   // TODO: take care of credentials (now it uses just role credentials)
   def preparing(creds: AWSCredentials) = """
-    |curl http://www.scala-lang.org/files/archive/scala-2.10.3.rpm > scala.rpm
-    |yum install scala.rpm java-1.7.0-openjdk -y
+    |yum remove -y java*
+    |aws s3 cp s3://resources.ohnosequences.com/java7-oracle.rpm java7-oracle.rpm
+    |aws s3 cp s3://resources.ohnosequences.com/scala-2.10.3.rpm scala-2.10.3.rpm
+    |yum install -y java7-oracle.rpm scala-2.10.3.rpm
     |""".stripMargin
 
   def building(
@@ -34,7 +36,7 @@ case object AMI149f7863 extends AmazonLinuxAMI[FatJarMetadata]("ami-149f7863", "
     |""".stripMargin
 
   def applying: String = """
-    |java7 -cp .:dist.jar apply
+    |java -cp .:dist.jar apply
     |""".stripMargin
 
   def tag(state: String): String = s"""
