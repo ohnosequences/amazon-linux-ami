@@ -47,7 +47,6 @@ abstract class AmazonLinuxAMI[MB <: AnyMetadata](
     |export PATH="/root/bin:/opt/aws/bin:$PATH"
     |export ec2id=$(GET http://169.254.169.254/latest/meta-data/instance-id)
     |export EC2_HOME=/opt/aws/apitools/ec2
-    |export JAVA_HOME=/usr/lib/jvm/jre
     |export AWS_DEFAULT_REGION=$region$
     |""".stripMargin.
       replace("$region$", region.toString).
@@ -66,15 +65,12 @@ abstract class AmazonLinuxAMI[MB <: AnyMetadata](
   /*  This part should make any necessary for building preparations, 
       like installing build tools: java-7 and scala-2.10.3 from rpm's
   */
-  // FIXME: different buckets for different regions?
-  // TODO: use alternatives tool
-    // |alternatives --install /usr/bin/java java /usr/lib/jvm/jre-1.7.0-openjdk.x86_64/bin/java 20000
-    // |alternatives --auto java
   def preparing: String = """
-    |yum remove -y java*
     |aws s3 cp s3://resources.ohnosequences.com/java7-oracle.rpm java7-oracle.rpm
     |aws s3 cp s3://resources.ohnosequences.com/scala-2.10.3.rpm scala-2.10.3.rpm
     |yum install -y java7-oracle.rpm scala-2.10.3.rpm
+    |alternatives --install /usr/bin/java java /usr/java/default/bin/java 99999
+    |alternatives --auto java
     |""".stripMargin
 
   /* This is the main part of the script: building applicator. */
