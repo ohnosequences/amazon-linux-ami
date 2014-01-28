@@ -9,5 +9,5 @@ Add a dependency to your sbt project
 ```scala
 resolvers += "Era7 maven releases" at "http://releases.era7.com.s3.amazonaws.com"
 
-libraryDependencies += "ohnosequences" %% "amazon-linux-ami" % "0.15.0"
+libraryDependencies += "ohnosequences" %% "amazon-linux-ami" % "0.16.0"
 ```
