@@ -2,6 +2,7 @@ package ohnosequences.statika.ami
 
 import ohnosequences.statika._
 import ohnosequences.statika.aws._
+import ohnosequences.awstools.regions.Region
 
 sealed trait Arch
 case object Arch32 extends Arch { override def toString = "32" }
@@ -15,7 +16,7 @@ abstract class AmazonLinuxAMI[MB <: AnyMetadata](
   , amiVersion: String
   ) extends AMI[MB](id, amiVersion) {
 
-  val region: AWSRegion
+  val region: Region
   val arch: Arch
   val javaHeap: Int // in G
   val creds: AWSCredentials
@@ -122,7 +123,7 @@ abstract class AmazonLinuxAMI[MB <: AnyMetadata](
 abstract class FatJarAmazonLinuxAMI(
     id: String
   , amiVersion: String
-  , val region: AWSRegion
+  , val region: Region
   , val arch: Arch
   ) extends AmazonLinuxAMI[FatJarMetadata](id, amiVersion) {
 

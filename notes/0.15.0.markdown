@@ -1,4 +1,5 @@
 * Moved to aws-statika `v1.0.1` (fixing credentials);
 * Removed deprecated `AMI44939930`;
 * Refined abstract `AmazonLinuxAMI`;
-* Added actual AMIs for different regions;
+* Added synonims for AWS regions for convenience;
+* Simplified AMIs definition: one case class depending on the region;
