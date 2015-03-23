@@ -11,15 +11,14 @@ case object Arch64 extends Arch { override def toString = "64" }
 /*  Abtract class `AmazonLinuxAMI` provides parts of the user script as it's members, so that 
     one can extend it and redefine behaviour, of some part, reusing others.
 */
-abstract class AmazonLinuxAMI[MB <: AnyMetadata](
+abstract class AmazonLinuxAMI(
     id: String
   , amiVersion: String
-  ) extends AMI[MB](id, amiVersion) {
+  ) extends AMI(id, amiVersion) {
 
   val region: Region
   val arch: Arch
   val javaHeap: Int // in G
-  val creds: AWSCredentials
   val workingDir: String
   
   /*  First of all, `initSetting` part sets up logging.
@@ -54,33 +53,37 @@ abstract class AmazonLinuxAMI[MB <: AnyMetadata](
       replace("$tagOk$", tag("$2")).
       replace("$tagFail$", tag("failure"))
 
-  def credentialsSetting: String = creds match {
-      case RoleCredentials => ""
-      case Explicit(accessKey: String, secretKey: String) => s"""
-        |export AWS_ACCESS_KEY_ID=${accessKey}
-        |export AWS_SECRET_ACCESS_KEY=${secretKey}
-        |""".stripMargin
-      case _ => ""
-    }
-
   /*  This part should make any necessary for building preparations, 
-      like installing build tools: java-7 and scala-2.10.3 from rpm's
+      like installing build tools: java-7 and scala-2.11.6 from rpm's
   */
   def preparing: String = """
     |aws s3 cp s3://resources.ohnosequences.com/java7-oracle.rpm java7-oracle.rpm
-    |aws s3 cp s3://resources.ohnosequences.com/scala-2.10.3.rpm scala-2.10.3.rpm
-    |yum install -y java7-oracle.rpm scala-2.10.3.rpm
+    |aws s3 cp s3://resources.ohnosequences.com/scala-2.11.6.rpm scala-2.11.6.rpm
+    |yum install -y java7-oracle.rpm scala-2.11.6.rpm
     |alternatives --install /usr/bin/java java /usr/java/default/bin/java 99999
     |alternatives --auto java
     |""".stripMargin
 
   /* This is the main part of the script: building applicator. */
   def building(
-      md: MetadataBound
-    , distName: String
-    , bundleName: String
-    , creds: AWSCredentials = RoleCredentials
-    ): String
+      artifactUrl: String,
+      distName: String,
+      bundleName: String
+    ): String = s"""
+    |mkdir -p ${workingDir}
+    |cd ${workingDir}
+    |
+    |echo "object apply extends App { " > apply.scala
+    |echo "  val results = ${distName}.installWithDeps(${bundleName}); " >> apply.scala
+    |echo "  results foreach println; " >> apply.scala
+    |echo "  if (results.hasFailures) sys.error(results.toString) " >> apply.scala
+    |echo "}" >> apply.scala
+    |cat apply.scala
+    |
+    |aws s3 cp ${artifactUrl} dist.jar
+    |
+    |scalac -cp dist.jar apply.scala
+    |""".stripMargin
 
   /* Just running what we built. */
   def applying: String = s"""
@@ -104,48 +107,15 @@ abstract class AmazonLinuxAMI[MB <: AnyMetadata](
 
   /* Combining all parts to one script. */
   def userScript(
-      md: MetadataBound
-    , distName: String
-    , bundleName: String
-    , creds: AWSCredentials = RoleCredentials
-    ): String = { fixLineEndings(
-        "#!/bin/sh \n"       + initSetting + credentialsSetting +
+      artifactUrl: String,
+      distName: String,
+      bundleName: String
+    ): String = fixLineEndings(
+        "#!/bin/sh \n"       + initSetting + 
         tagStep("preparing") + preparing +
-        tagStep("building")  + building(md, distName, bundleName, creds) + 
+        tagStep("building")  + building(artifactUrl, distName, bundleName) + 
         tagStep("applying")  + applying +
         tagStep("success")
       )
-  }
-
-}
-
-// This implementation uses FatJarMetadata to download the jar from S3
-abstract class FatJarAmazonLinuxAMI(
-    id: String
-  , amiVersion: String
-  , val region: Region
-  , val arch: Arch
-  ) extends AmazonLinuxAMI[FatJarMetadata](id, amiVersion) {
-
-  def building(
-      md: MetadataBound
-    , distName: String
-    , bundleName: String
-    , creds: AWSCredentials = RoleCredentials
-    ): String = s"""
-    |mkdir -p ${workingDir}
-    |cd ${workingDir}
-    |
-    |echo "object apply extends App { " > apply.scala
-    |echo "  val results = ${distName}.installWithDeps(${bundleName}); " >> apply.scala
-    |echo "  results foreach println; " >> apply.scala
-    |echo "  if (results.hasFailures) sys.error(results.toString) " >> apply.scala
-    |echo "}" >> apply.scala
-    |cat apply.scala
-    |
-    |aws s3 cp ${md.artifactUrl} dist.jar
-    |
-    |scalac -cp dist.jar apply.scala
-    |""".stripMargin
 
 }
